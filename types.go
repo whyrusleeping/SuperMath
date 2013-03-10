@@ -6,6 +6,9 @@ import (
 	"fmt"
 )
 
+//Map for keeping track of variables
+var Vars = make(map[uint8]*Variable)
+
 //Equation Forms
 const (
 	FSimple = iota
@@ -52,8 +55,12 @@ type Variable struct {
 }
 
 func NewVariable(C string) *Variable {
-	v := Variable{C[0], 0}
-	return &v
+	v,ok := Vars[C[0]]
+	if !ok {
+		v = &Variable{C[0], 0}
+		Vars[C[0]] = v
+	}
+	return v
 }
 
 func (v *Variable) Print() string{
@@ -97,16 +104,16 @@ func (t *Term) Value() float64 {
 func (t *Term) Print() string{
 	ops := ""
 	switch t.operator {
-		case OAdd:
-			ops = "+"
-		case OSub:
-			ops = "-"
-		case OMul:
-			ops = "*"
-		case ODiv:
-			ops = "/"
-		case OPow:
-			ops = "^"
+	case OAdd:
+		ops = "+"
+	case OSub:
+		ops = "-"
+	case OMul:
+		ops = "*"
+	case ODiv:
+		ops = "/"
+	case OPow:
+		ops = "^"
 	}
 	return fmt.Sprintf("(%s %s %s)",t.left.Print(), ops, t.right.Print())
 }
