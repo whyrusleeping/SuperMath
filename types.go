@@ -54,11 +54,11 @@ func (e *Equality) SolveFor(v uint8) float64 {
 	difference := e.left.Value() - e.right.Value()
 	vr := Vars[v]
 	delta := vr.Value() / 2
-	for math.Abs(difference) > tolerance {
+	for i:= uint64(0); math.Abs(difference) > tolerance && i < 10e6; i++ {
 		vr.val += delta
 		ndiff := e.left.Value() - e.right.Value()
 		if (ndiff > difference && ndiff > 0) || (ndiff < difference && ndiff < 0) {
-			delta = delta * -1
+			delta = delta * -0.9
 		}
 		if (ndiff < 0  && difference > 0) || (ndiff > 0 && difference < 0) {
 			vr.val -= delta
@@ -117,6 +117,7 @@ func (t *Term) Value() float64 {
 		case OSub: return t.left.Value() - t.right.Value()
 		case OMul: return t.left.Value() * t.right.Value()
 		case ODiv: return t.left.Value() / t.right.Value()
+		case OPow: return math.Pow(t.left.Value(), t.right.Value())
 	}
 	return 0
 }

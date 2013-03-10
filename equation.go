@@ -81,7 +81,7 @@ func Tokenize(input string) []*Token {
 	return tokens[:ntok]
 }
 
-//Parse and validate syntax, also expand any 'shortcuts'
+//ParseExpression and validate syntax, also expand any 'shortcuts'
 func Validate(tokens []*Token) ([]*Token , error) {
 	lt := TUnknown
 	passtwo := make([]*Token, len(tokens)*2)
@@ -202,7 +202,7 @@ func build(tokens []*Token) Equatable {
 	return eqs[0]
 }
 
-func Parse(input string) (Equatable, error) {
+func ParseExpression(input string) (Equatable, error) {
 	tokens := Tokenize(input)
 	//fmt.Println(tokens)
 	if len(tokens) == 1 {
