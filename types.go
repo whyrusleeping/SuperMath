@@ -45,8 +45,28 @@ func (c *Constant) Print() string{
 	return fmt.Sprint(c.val)
 }
 
-type Equation struct {
-	vars []*Variable
+type Equality struct {
+	left, right Equatable
+}
+
+func (e *Equality) SolveFor(v uint8) float64 {
+	tolerance := 0.00000000000000001
+	difference := e.left.Value() - e.right.Value()
+	vr := Vars[v]
+	delta := vr.Value() / 2
+	for math.Abs(difference) > tolerance {
+		vr.val += delta
+		ndiff := e.left.Value() - e.right.Value()
+		if (ndiff > difference && ndiff > 0) || (ndiff < difference && ndiff < 0) {
+			delta = delta * -1
+		}
+		if (ndiff < 0  && difference > 0) || (ndiff > 0 && difference < 0) {
+			vr.val -= delta
+			delta /= 4
+		}
+		difference = ndiff
+	}
+	return vr.val
 }
 
 type Variable struct {

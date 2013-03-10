@@ -74,6 +74,10 @@ func Tokenize(input string) []*Token {
 
 		}
 	}
+	if tmpStr != "" {
+		tokens[ntok] = &Token{TNumber, tmpStr}
+		ntok++
+	}
 	return tokens[:ntok]
 }
 
@@ -200,6 +204,14 @@ func build(tokens []*Token) Equatable {
 
 func Parse(input string) (Equatable, error) {
 	tokens := Tokenize(input)
+	//fmt.Println(tokens)
+	if len(tokens) == 1 {
+		if tokens[0].kind == TVariable {
+			return NewVariable(tokens[0].val),nil
+		} else if tokens[0].kind == TNumber {
+			return NewConstant(tokens[0].val),nil
+		}
+	}
 	tokens,err := Validate(tokens)
 	if err != nil {
 		return nil, err
