@@ -56,18 +56,16 @@ func (e *Equality) SolveFor(v uint8) float64 {
 		vr.val = 5 //5 is sufficiently random, selected by a random dice roll
 	}
 	difference := e.left.Value() - e.right.Value()
-	delta := vr.Value() / 2
+	h := 0.0000001
 	for i:= uint64(0); math.Abs(difference) > tolerance && i < 10e6; i++ {
-		vr.val += delta
-		ndiff := e.left.Value() - e.right.Value()
-		if (ndiff > difference && ndiff > 0) || (ndiff < difference && ndiff < 0) {
-			delta = delta * -0.9
-		}
-		if (ndiff < 0  && difference > 0) || (ndiff > 0 && difference < 0) {
-			vr.val -= delta
-			delta /= 4
-		}
-		difference = ndiff
+		difference = e.left.Value() - e.right.Value()
+		tmp := vr.val
+		vr.val += h
+		pos := e.left.Value() - e.right.Value()
+		vr.val = tmp - h
+		neg := e.left.Value() - e.right.Value()
+		vr.val = tmp
+		vr.val -= difference / ((pos - neg) / (2 * h))
 	}
 	return vr.val
 }
