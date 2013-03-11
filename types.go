@@ -51,8 +51,11 @@ type Equality struct {
 
 func (e *Equality) SolveFor(v uint8) float64 {
 	tolerance := 0.00000000000000001
-	difference := e.left.Value() - e.right.Value()
 	vr := Vars[v]
+	if math.Abs(vr.val) < 1 {
+		vr.val = 5 //5 is sufficiently random, selected by a random dice roll
+	}
+	difference := e.left.Value() - e.right.Value()
 	delta := vr.Value() / 2
 	for i:= uint64(0); math.Abs(difference) > tolerance && i < 10e6; i++ {
 		vr.val += delta

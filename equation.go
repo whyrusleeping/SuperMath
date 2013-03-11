@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 )
 
 func IsOperator(c uint8) bool {
@@ -202,6 +203,22 @@ func build(tokens []*Token) Equatable {
 	return eqs[0]
 }
 
+func ParseEquation(input string) (*Equality, error) {
+	if !strings.Contains(input,"=") {
+		return nil, errors.New("Not a valid equality, must contain '='.")
+	}
+	spl := strings.Split(input, "=")
+	l,lerr := ParseExpression(spl[0])
+	r,rerr := ParseExpression(spl[1])
+	if lerr != nil {
+		return nil, lerr
+	}
+	if rerr != nil {
+		return nil, rerr
+	}
+	return &Equality{l,r}, nil
+}
+
 func ParseExpression(input string) (Equatable, error) {
 	tokens := Tokenize(input)
 	//fmt.Println(tokens)
@@ -231,18 +248,4 @@ where the top operators are add or subtract are to be considered Combinational E
 equations of the form:
 x * y / z...
 where the top operators are multiply or divide are to be considered Multiplicate Equations
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 */
