@@ -3,6 +3,10 @@ package main
 import (
 	"errors"
 	"strings"
+	"fmt"
+	"strconv"
+	"os"
+	"bufio"
 )
 
 func IsOperator(c uint8) bool {
@@ -237,15 +241,27 @@ func ParseExpression(input string) (Equatable, error) {
 	return eq, nil
 }
 
-/*
-thought space:
-identify top operator giving reverse precedence to order (i.e. +/- have highest priority)
-
-equations of the form:
-x + y - z... 
-where the top operators are add or subtract are to be considered Combinational Equations
-
-equations of the form:
-x * y / z...
-where the top operators are multiply or divide are to be considered Multiplicate Equations
-*/
+func Interpreter() {
+	run := true
+	stdin := bufio.NewReader(os.Stdin)
+	var eq *Equality
+	for run {
+		line,_,_ := stdin.ReadLine()
+		if line[0] == ':' {
+			eq,_ = ParseEquation(string(line[1:]))
+		} else if line[0] == '?' {
+			fmt.Printf("%s = %f\n", string(line[1:2]), Vars[line[1]].Value())
+		} else if line[0] == '!' {
+			fmt.Printf("Solving for %s in:\n\t%s\n", string(line[1:2]), eq.Print())
+			fmt.Printf("%s = %f\n", string(line[1:2]), eq.SolveFor(line[1]))
+		} else {
+			if string(line) == "quit" {
+				return
+			}
+			if strings.Contains(string(line),"=") {
+				Vars[line[0]].val,_ = strconv.ParseFloat(string(line[2:]),64)
+			}
+		}
+	}
+	eq.SolveFor(' ')
+}

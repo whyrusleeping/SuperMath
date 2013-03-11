@@ -72,6 +72,10 @@ func (e *Equality) SolveFor(v uint8) float64 {
 	return vr.val
 }
 
+func (e *Equality) Print() string {
+	return fmt.Sprintf("%s = %s",e.left.Print(), e.right.Print())
+}
+
 type Variable struct {
 	C uint8
 	val float64
