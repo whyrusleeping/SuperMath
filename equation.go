@@ -54,7 +54,7 @@ func Tokenize(input string) []*Token {
 	tmpStr := ""
 	for i := 0; i < len(input); i++ {
 		c := input[i]
-		if IsNum(c) {
+		if IsNum(c) || c == '.' {
 			tmpStr += input[i:i+1]
 		} else {
 			if tmpStr != "" {
@@ -225,7 +225,6 @@ func ParseEquation(input string) (*Equality, error) {
 
 func ParseExpression(input string) (Equatable, error) {
 	tokens := Tokenize(input)
-	//fmt.Println(tokens)
 	if len(tokens) == 1 {
 		if tokens[0].kind == TVariable {
 			return NewVariable(tokens[0].val),nil
@@ -247,13 +246,18 @@ func Interpreter() {
 	var eq *Equality
 	for run {
 		line,_,_ := stdin.ReadLine()
+		if len(line) == 0 {
+			continue
+		}
 		if line[0] == ':' {
 			eq,_ = ParseEquation(string(line[1:]))
 		} else if line[0] == '?' {
 			fmt.Printf("%s = %f\n", string(line[1:2]), Vars[line[1]].Value())
 		} else if line[0] == '!' {
 			fmt.Printf("Solving for %s in:\n\t%s\n", string(line[1:2]), eq.Print())
-			fmt.Printf("%s = %f\n", string(line[1:2]), eq.SolveFor(line[1]))
+			ans, er := eq.SolveFor(line[1])
+			fmt.Printf("%s = %f\n", string(line[1:2]), ans)
+			fmt.Printf("\terror: %f\n",er)
 		} else {
 			if string(line) == "quit" {
 				return

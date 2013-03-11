@@ -33,7 +33,7 @@ type Constant struct {
 }
 
 func NewConstant(val string) *Constant {
-	n, _ := strconv.Atoi(val)
+	n,_ := strconv.ParseFloat(val, 64)
 	return &(Constant{float64(n)})
 }
 
@@ -49,7 +49,7 @@ type Equality struct {
 	left, right Equatable
 }
 
-func (e *Equality) SolveFor(v uint8) float64 {
+func (e *Equality) SolveFor(v uint8) (float64, float64) {
 	tolerance := 0.00000000000000001
 	vr := Vars[v]
 	if math.Abs(vr.val) < 1 {
@@ -67,7 +67,7 @@ func (e *Equality) SolveFor(v uint8) float64 {
 		vr.val = tmp
 		vr.val -= difference / ((pos - neg) / (2 * h))
 	}
-	return vr.val
+	return vr.val, difference
 }
 
 func (e *Equality) Print() string {

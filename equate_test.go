@@ -12,8 +12,8 @@ func TestEquation(t *testing.T) {
 
 	//y = -1
 
-	res := eq.SolveFor('y')
-	if res != -1 {
+	res,off := eq.SolveFor('y')
+	if res != -1 || off != 0{
 		t.Fatalf("solved to %f",res)
 	}
 }
