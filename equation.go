@@ -220,6 +220,8 @@ func ParseEquation(input string) (*Equality, error) {
 	if rerr != nil {
 		return nil, rerr
 	}
+	l = Simplify(l)
+	r = Simplify(r)
 	return &Equality{l,r}, nil
 }
 

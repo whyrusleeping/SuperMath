@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"strconv"
+	"errors"
 	"fmt"
 )
 
@@ -26,6 +27,7 @@ const (
 type Equatable interface {
 	Value() float64
 	Print() string
+	simple() bool
 }
 
 type Constant struct {
@@ -45,8 +47,16 @@ func (c *Constant) Print() string{
 	return fmt.Sprint(c.val)
 }
 
+func (c *Constant) simple() bool {
+	return true
+}
+
 type Equality struct {
 	left, right Equatable
+}
+
+func (e *Equality) Difference() float64 {
+	return e.left.Value() - e.right.Value()
 }
 
 func (e *Equality) SolveFor(v uint8) (float64, float64) {
@@ -55,19 +65,30 @@ func (e *Equality) SolveFor(v uint8) (float64, float64) {
 	if math.Abs(vr.val) < 1 {
 		vr.val = 5 //5 is sufficiently random, selected by a random dice roll
 	}
-	difference := e.left.Value() - e.right.Value()
+	difference := e.Difference()
 	h := 0.0000001
 	for i:= uint64(0); math.Abs(difference) > tolerance && i < 10e6; i++ {
-		difference = e.left.Value() - e.right.Value()
+		difference = e.Difference()
 		tmp := vr.val
 		vr.val += h
-		pos := e.left.Value() - e.right.Value()
+		pos := e.Difference()
 		vr.val = tmp - h
-		neg := e.left.Value() - e.right.Value()
+		neg := e.Difference()
 		vr.val = tmp
 		vr.val -= difference / ((pos - neg) / (2 * h))
 	}
 	return vr.val, difference
+}
+
+//Note, this doesnt actually do anything because im not that smart
+func (e *Equality) Differentiate(of, to uint8) (*Equality, error) {
+	_,okl := e.left.(*Variable)
+	_,okr := e.right.(*Variable)
+	//First, get a single variable on the left side, if we cant, exit with a failure
+	if !okl && !okr {
+		return nil, errors.New("Equation must have single variable on one side for now")
+	}
+	return nil,nil
 }
 
 func (e *Equality) Print() string {
@@ -92,6 +113,10 @@ func (v *Variable) Print() string{
 	s := make([]byte,1)
 	s[0] = v.C
 	return string(s)
+}
+
+func (v *Variable) simple() bool {
+	return false
 }
 
 type Term struct {
@@ -127,6 +152,10 @@ func (t *Term) Value() float64 {
 	return 0
 }
 
+func (t *Term) simple() bool {
+	return t.left.simple() && t.right.simple()
+}
+
 func (t *Term) Print() string{
 	ops := ""
 	switch t.operator {
@@ -148,3 +177,15 @@ func (v *Variable) Value() float64 {
 	return v.val
 }
 
+func Simplify(e Equatable) Equatable {
+	if e.simple() {
+		return &Constant{e.Value()}
+	} else {
+		t,ok := e.(*Term)
+		if ok {
+			t.left = Simplify(t.left)
+			t.right = Simplify(t.right)
+		}
+	}
+	return e
+}
