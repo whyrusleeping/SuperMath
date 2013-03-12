@@ -185,7 +185,24 @@ func Simplify(e Equatable) Equatable {
 		if ok {
 			t.left = Simplify(t.left)
 			t.right = Simplify(t.right)
+			vl, okl := t.left.(*Variable)
+			vr, okr := t.right.(*Variable)
+			if okl && okr {
+				if vl.C == vr.C {
+					switch t.operator {
+						case OAdd:
+							return &Term{&Constant{2.0}, vl, OMul}
+						case OSub:
+							return &Constant{0.0}
+						case OMul:
+							return &Term{vl, &Constant{2.0}, OPow}
+						case ODiv:
+							return &Constant{1.0}
+					}
+				}
+			}
 		}
 	}
+	//Next up: check for cancelling, ie ((6 * x^2) / 2) = (3 * x^2)
 	return e
 }
