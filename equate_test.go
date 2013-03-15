@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"math"
+)
 
 func TestEquation(t *testing.T) {
 	eq,err := ParseEquation("y ^ 3 = 4x + (8 - (3x^2 -6))")
@@ -15,6 +18,19 @@ func TestEquation(t *testing.T) {
 	res,off := eq.SolveFor('y')
 	if res != -1 || off != 0{
 		t.Fatalf("solved to %f",res)
+	}
+}
+
+func TestFunction(t* testing.T) {
+	eq, err := ParseEquation("tan(x + 4)=y -7")
+	if err != nil {
+		panic(err)
+	}
+	Vars['x'].val = 1.9
+	actual := math.Tan(5.9) + 7
+	solve,_ := eq.SolveFor('y')
+	if actual != solve {
+		t.Fatalf("%f %f",actual,solve)
 	}
 }
 

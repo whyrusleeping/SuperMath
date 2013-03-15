@@ -22,6 +22,7 @@ const (
 	ODiv
 	OPow
 	OLog
+	OFun
 )
 
 type Equatable interface {
@@ -95,30 +96,6 @@ func (e *Equality) Print() string {
 	return fmt.Sprintf("%s = %s",e.left.Print(), e.right.Print())
 }
 
-type Variable struct {
-	C uint8
-	val float64
-}
-
-func NewVariable(C string) *Variable {
-	v,ok := Vars[C[0]]
-	if !ok {
-		v = &Variable{C[0], 0}
-		Vars[C[0]] = v
-	}
-	return v
-}
-
-func (v *Variable) Print() string{
-	s := make([]byte,1)
-	s[0] = v.C
-	return string(s)
-}
-
-func (v *Variable) simple() bool {
-	return false
-}
-
 type Term struct {
 	left, right Equatable
 	operator int
@@ -173,10 +150,6 @@ func (t *Term) Print() string{
 	return fmt.Sprintf("(%s %s %s)",t.left.Print(), ops, t.right.Print())
 }
 
-func (v *Variable) Value() float64 {
-	return v.val
-}
-
 func Simplify(e Equatable) Equatable {
 	if e.simple() {
 		return &Constant{e.Value()}
@@ -190,19 +163,68 @@ func Simplify(e Equatable) Equatable {
 			if okl && okr {
 				if vl.C == vr.C {
 					switch t.operator {
-						case OAdd:
-							return &Term{&Constant{2.0}, vl, OMul}
-						case OSub:
-							return &Constant{0.0}
-						case OMul:
-							return &Term{vl, &Constant{2.0}, OPow}
-						case ODiv:
-							return &Constant{1.0}
+					case OAdd:
+						return &Term{&Constant{2.0}, vl, OMul}
+					case OSub:
+						return &Constant{0.0}
+					case OMul:
+						return &Term{vl, &Constant{2.0}, OPow}
+					case ODiv:
+						return &Constant{1.0}
 					}
 				}
+			} else if okl {
+				r, cr := simplifyVars(vl, t.right, t.operator)
+				if cr {
+					return r
+				}
+			} else if okr {
+				l, cl := simplifyVars(vr, t.left, t.operator)
+				if cl {
+					return l
+				}
 			}
+			//insert further logic here.
 		}
 	}
 	//Next up: check for cancelling, ie ((6 * x^2) / 2) = (3 * x^2)
 	return e
+}
+
+//Checks for cases like:
+// X * (X ^3) -> X ^ 4
+// X + (X - 6) -> ((2 * X) - 6)
+// X - (X + 5) -> 5
+//Also try to do:
+// (1 / x) -> (x ^ -1)
+// (3 / x) -> (3 * (x ^ -1))
+func simplifyVars(v *Variable, e Equatable, op int) (Equatable, bool) {
+	//check if 'e' is a term, otherwise we have nothing to do
+	t, ok := e.(*Term)
+	if !ok {
+		return nil, false
+	}
+
+	ttlv, ttokl := t.left.(*Variable)
+	//For this case only work where left side of nested statement is the Variable in question
+	if ttokl && ttlv.C == v.C {
+		if t.operator == OPow {
+			if op == OMul {
+				if t.right.simple() {
+					return &Term{v, &Constant{t.right.Value() + 1}, OPow}, true
+				} else {
+					returnTerm := &Term{v, nil, OPow}
+					returnTerm.right = &Term{t.right, &Constant{1.0}, OAdd}
+					return returnTerm
+				}
+			} else if op == ODiv {
+				
+			}
+		}
+	}
+
+	// Now attempt combination
+	// General case : X  * (  X     ^     3)
+	//               [v][op][subv][t.op][par]
+	return nil, false
 }

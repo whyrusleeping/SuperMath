@@ -40,12 +40,29 @@ const (
 	TNumber
 	TVariable
 	TOperator
+	TFunction
 	TUnknown
 )
 
 type Token struct {
 	kind byte
 	val string
+}
+
+func IsSpecialFunction(segment string) (bool, string) {
+	if len(segment) > 3 {
+		tr := segment[:3]
+		switch tr {
+			case "sin", "cos", "tan":
+				return true, tr
+		}
+		tr = segment[:4]
+		switch tr {
+			case "asin", "acos", "atan":
+				return true, tr
+		}
+	}
+	return false, ""
 }
 
 func Tokenize(input string) []*Token {
@@ -70,6 +87,15 @@ func Tokenize(input string) []*Token {
 			}else if IsOperator(c) {
 				t = TOperator
 			}else if IsAlpha(c) {
+				fi, str := IsSpecialFunction(input[i:])
+				if fi {
+					i += len(str)
+					t = TFunction
+					tokens[ntok] = &Token{t, str}
+					tokens[ntok + 1] = &Token{TOperator, "F"}
+					ntok += 2
+					continue
+				}
 				t = TVariable
 			}
 			if t != TUnknown {
@@ -113,7 +139,7 @@ func Validate(tokens []*Token) ([]*Token , error) {
 			}
 			passtwo[tokc] = tokens[i]
 			tokc++
-		case TVariable, TNumber:
+		case TVariable, TNumber, TFunction:
 			if lt == TVariable || lt == TNumber || lt == TRparen {
 				passtwo[tokc] = &Token{TOperator, "*"}
 				tokc++
@@ -129,6 +155,10 @@ func Validate(tokens []*Token) ([]*Token , error) {
 //returns true if operator a has higher precedence than b
 func comparePrecedence(a, b int) bool {
 	if a == b {
+		return false
+	}
+
+	if a == OFun {
 		return false
 	}
 
@@ -155,6 +185,8 @@ func OpSignToConst(op string) (rop int) {
 		rop = ODiv
 	case "^":
 		rop = OPow
+	case "F":
+		rop = OFun
 	}
 	return rop
 }
@@ -163,7 +195,7 @@ func build(tokens []*Token) Equatable {
 	stack := NewTokStack(len(tokens))
 	postfix := NewTokStack(len(tokens))
 	for _,t := range tokens {
-		if t.kind == TNumber || t.kind == TVariable {
+		if t.kind == TNumber || t.kind == TVariable ||t.kind == TFunction {
 			postfix.Push(t)
 		} else if t.kind == TLparen {
 			stack.Push(t)
@@ -197,11 +229,21 @@ func build(tokens []*Token) Equatable {
 		} else if t.kind == TNumber {
 			eqs[eqsc] = NewConstant(t.val)
 			eqsc++
+		}else if t.kind == TFunction {
+			eqs[eqsc] = &Function{FStrToConst(t.val),nil}
+			eqsc++
 		} else if t.kind == TOperator {
 			op := OpSignToConst(t.val)
+			if op == OFun {
+				tpar := eqs[eqsc - 1]
+				tfun,_ := eqs[eqsc - 2].(*Function)
+				tfun.arg = tpar
+				eqsc--
+			} else {
 			neq := &Term{eqs[eqsc - 2] ,eqs[eqsc - 1], op}
 			eqsc--
 			eqs[eqsc - 1] = neq
+		}
 		}
 	}
 	return eqs[0]
@@ -223,6 +265,15 @@ func ParseEquation(input string) (*Equality, error) {
 	l = Simplify(l)
 	r = Simplify(r)
 	return &Equality{l,r}, nil
+}
+
+func SimilarOp(a, b int) bool {
+	if (a == OAdd || a == OSub) && (b == OAdd || b == OSub) {
+		return true
+	} else if (a == OMul || a == ODiv) && (b == OMul || b == ODiv) {
+		return true
+	}
+	return false
 }
 
 func ParseExpression(input string) (Equatable, error) {
