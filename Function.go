@@ -89,3 +89,7 @@ func (f *Function) Print() string {
 func (f *Function) simple() bool {
 	return f.arg.simple()
 }
+
+func (f *Function) ContainsVar(v uint8) bool {
+	return f.arg.ContainsVar(v)
+}

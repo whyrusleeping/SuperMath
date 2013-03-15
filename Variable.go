@@ -27,3 +27,7 @@ func (v *Variable) simple() bool {
 func (v *Variable) Value() float64 {
 	return v.val
 }
+
+func (v *Variable) ContainsVar(vc uint8) bool {
+	return v.C == vc
+}
