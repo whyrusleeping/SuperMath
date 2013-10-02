@@ -50,31 +50,20 @@ type Token struct {
 	val string
 }
 
-func IsFunction(segment string) (bool, string) {
+func GetToken(segment string) (typ byte, name string) {
+	typ = TVariable
 	for i := 0; i < len(segment); i++ {
-		if segment[i] == ' ' || IsOperator(segment[i]) {
-			return false,""
-		}
 		if segment[i] == '(' {
-			return true, segment[:i]
+			typ = TFunction
+			name = segment[:i]
+			break
+		} else if !(IsAlpha(segment[i]) || IsNum(segment[i])) {
+			typ = TVariable
+			name = segment[:i]
+			break
 		}
 	}
-	return false,""
-	/*
-	if len(segment) > 3 {
-		tr := segment[:3]
-		switch tr {
-		case "sin", "cos", "tan":
-			return true, tr
-		}
-		tr = segment[:4]
-		switch tr {
-		case "asin", "acos", "atan":
-			return true, tr
-		}
-	}
-	return false, ""
-	*/
+	return
 }
 
 func Tokenize(input string) []*Token {
@@ -98,19 +87,22 @@ func Tokenize(input string) []*Token {
 			} else if IsOperator(c) {
 				t = TOperator
 			} else if IsAlpha(c) {
-				fi, str := IsFunction(input[i:])
-				if fi {
-					i += len(str) - 1
-					t = TFunction
-					tokens = append(tokens,&Token{t, str})
-					tokens = append(tokens,&Token{TOperator, "F"})
-					continue
-				} else {
-					t = TVariable
+				typ, name := GetToken(input[i:])
+				if typ == TUnknown {
+					fmt.Println("Syntax Error!")
+					return nil
 				}
+				i += len(name) - 1
+				t = typ
+				tokens = append(tokens,&Token{t, name})
+				if typ == TFunction {
+					tokens = append(tokens,&Token{TOperator, "F"})
+				}
+				continue
 			}
 
-			//This is wrong as it assumes that each token is only one character long
+			//This is wrong as it assumes that each
+			//token is only one character long
 			if t != TUnknown {
 				tokens = append(tokens,&Token{t,input[i:i+1]})
 			}
@@ -305,6 +297,9 @@ func ParseExpression(input string) (Equatable, error) {
 	return eq, nil
 }
 
+//TODO:
+//This is VERY broken right now, dont use it until
+//problems are resolved dealing with variable names
 func Interpreter() {
 	run := true
 	stdin := bufio.NewReader(os.Stdin)
@@ -317,23 +312,23 @@ func Interpreter() {
 		if line[0] == ':' {
 			eq,_ = ParseEquation(string(line[1:]))
 		} else if line[0] == '?' {
-			v := Vars[line[1]]
+			v := Vars[string(line[1:])]
 			if v != nil {
-				fmt.Printf("%s = %f\n", string(line[1:2]), v.Value())
+				fmt.Printf("%s = %f\n", string(line[1:]), v.Value())
 			} else {
-				fmt.Printf("Error: %s does not exist!\n", line[1:2])
+				fmt.Printf("Error: %s does not exist!\n", line[1:])
 			}
 		} else if line[0] == '!' {
-			fmt.Printf("Solving for %s in:\n\t%s\n", string(line[1:2]), eq.Print())
-			ans, er := eq.SolveFor(line[1])
-			fmt.Printf("%s = %f\n", string(line[1:2]), ans)
+			fmt.Printf("Solving for %s in:\n\t%s\n", string(line[1:]), eq.Print())
+			ans, er := eq.SolveFor(string(line[1:]))
+			fmt.Printf("%s = %f\n", string(line[1:]), ans)
 			fmt.Printf("\terror: %f\n",er)
 		} else {
 			if string(line) == "quit" {
 				return
 			}
 			if strings.Contains(string(line),"=") {
-				v := Vars[line[0]]
+				v := Vars[string(line[0:])]
 				if v != nil {
 					v.val,_ = strconv.ParseFloat(string(line[2:]),64)
 				} else {
@@ -342,5 +337,5 @@ func Interpreter() {
 			}
 		}
 	}
-	eq.SolveFor(' ')
+	eq.SolveFor(" ")
 }

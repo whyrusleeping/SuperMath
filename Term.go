@@ -42,6 +42,6 @@ func (t *Term) Print() string{
 	return fmt.Sprintf("(%s %s %s)",t.left.Print(), ops, t.right.Print())
 }
 
-func (t *Term) ContainsVar(v uint8) bool {
+func (t *Term) ContainsVar(v string) bool {
 	return t.left.ContainsVar(v) || t.right.ContainsVar(v)
 }

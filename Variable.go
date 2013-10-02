@@ -1,23 +1,21 @@
 package main
 
 type Variable struct {
-	C uint8
+	C string
 	val float64
 }
 
 func NewVariable(C string) *Variable {
-	v,ok := Vars[C[0]]
+	v,ok := Vars[C]
 	if !ok {
-		v = &Variable{C[0], 0}
-		Vars[C[0]] = v
+		v = &Variable{C, 0}
+		Vars[C] = v
 	}
 	return v
 }
 
 func (v *Variable) Print() string {
-	s := make([]byte,1)
-	s[0] = v.C
-	return string(s)
+	return v.C
 }
 
 func (v *Variable) simple() bool {
@@ -28,6 +26,6 @@ func (v *Variable) Value() float64 {
 	return v.val
 }
 
-func (v *Variable) ContainsVar(vc uint8) bool {
+func (v *Variable) ContainsVar(vc string) bool {
 	return v.C == vc
 }

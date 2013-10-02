@@ -31,6 +31,6 @@ func (ct *CalcTerm) Integrate() *CalcTerm {
 	return &nct
 }
 
-func (ct *CalcTerm) ContainsVar(v uint8) bool {
+func (ct *CalcTerm) ContainsVar(v string) bool {
 	return ct.vr.C == v || ct.power.ContainsVar(v)
 }

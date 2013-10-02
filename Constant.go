@@ -26,6 +26,6 @@ func (c *Constant) simple() bool {
 	return true
 }
 
-func (c *Constant) ContainsVar(v uint8) bool {
+func (c *Constant) ContainsVar(v string) bool {
 	return false
 }

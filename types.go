@@ -7,7 +7,7 @@ import (
 )
 
 //Map for keeping track of variables
-var Vars = make(map[uint8]*Variable)
+var Vars = make(map[string]*Variable)
 
 //Equation Forms
 const (
@@ -27,7 +27,7 @@ const (
 type Equatable interface {
 	Value() float64
 	Print() string
-	ContainsVar(uint8) bool
+	ContainsVar(string) bool
 	simple() bool
 }
 
@@ -39,7 +39,7 @@ func (e *Equality) Difference() float64 {
 	return e.left.Value() - e.right.Value()
 }
 
-func (e *Equality) SolveFor(v uint8) (float64, float64) {
+func (e *Equality) SolveFor(v string) (float64, float64) {
 	tolerance := 0.00000000000000001
 	vr := Vars[v]
 	if math.Abs(vr.val) < 1 {
@@ -61,7 +61,7 @@ func (e *Equality) SolveFor(v uint8) (float64, float64) {
 }
 
 //Note, this doesnt actually do anything because im not that smart
-func (e *Equality) Differentiate(of, to uint8) (*Equality, error) {
+func (e *Equality) Differentiate(of, to string) (*Equality, error) {
 	_,okl := e.left.(*Variable)
 	_,okr := e.right.(*Variable)
 	//First, get a single variable on the left side, if we cant, exit with a failure

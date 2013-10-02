@@ -90,6 +90,6 @@ func (f *Function) simple() bool {
 	return f.arg.simple()
 }
 
-func (f *Function) ContainsVar(v uint8) bool {
+func (f *Function) ContainsVar(v string) bool {
 	return f.arg.ContainsVar(v)
 }
