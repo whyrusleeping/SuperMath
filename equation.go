@@ -51,6 +51,16 @@ type Token struct {
 }
 
 func IsFunction(segment string) (bool, string) {
+	for i := 0; i < len(segment); i++ {
+		if segment[i] == ' ' || IsOperator(segment[i]) {
+			return false,""
+		}
+		if segment[i] == '(' {
+			return true, segment[:i]
+		}
+	}
+	return false,""
+	/*
 	if len(segment) > 3 {
 		tr := segment[:3]
 		switch tr {
@@ -64,6 +74,7 @@ func IsFunction(segment string) (bool, string) {
 		}
 	}
 	return false, ""
+	*/
 }
 
 func Tokenize(input string) []*Token {
@@ -89,14 +100,17 @@ func Tokenize(input string) []*Token {
 			} else if IsAlpha(c) {
 				fi, str := IsFunction(input[i:])
 				if fi {
-					i += len(str)
+					i += len(str) - 1
 					t = TFunction
 					tokens = append(tokens,&Token{t, str})
 					tokens = append(tokens,&Token{TOperator, "F"})
+					continue
 				} else {
 					t = TVariable
 				}
 			}
+
+			//This is wrong as it assumes that each token is only one character long
 			if t != TUnknown {
 				tokens = append(tokens,&Token{t,input[i:i+1]})
 			}

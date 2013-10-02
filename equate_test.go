@@ -2,7 +2,7 @@ package main
 
 import (
 	"testing"
-//	"math"
+	"math"
 )
 
 func TestTokenize(t *testing.T) {
@@ -28,7 +28,6 @@ func TestEquation(t *testing.T) {
 	}
 }
 
-/*
 func TestFunction(t* testing.T) {
 	eq, err := ParseEquation("tan(x + 4)=y -7")
 	if err != nil {
@@ -45,7 +44,6 @@ func TestFunction(t* testing.T) {
 		t.Fatalf("%f %f",actual,solve)
 	}
 }
-*/
 
 func BenchmarkAsyncEquate(b *testing.B) {
 	eq,_ := ParseEquation("y^(x - 2) - x^4 * y= x^2.5 - 6(y - x^0.5)")

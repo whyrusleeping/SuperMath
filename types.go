@@ -123,9 +123,6 @@ func Simplify(e Equatable) Equatable {
 // X * (X ^3) -> X ^ 4
 // X + (X - 6) -> ((2 * X) - 6)
 // X - (X + 5) -> 5
-//Also try to do:
-// (1 / x) -> (x ^ -1)
-// (3 / x) -> (3 * (x ^ -1))
 func simplifyVars(v *Variable, e Equatable, op int) Equatable {
 	//check if 'e' is a term, otherwise we have nothing to do
 	t, ok := e.(*Term)

@@ -4,9 +4,16 @@ import "fmt"
 
 func main() {
 	//Interpreter()
-
-	toks := Tokenize("y + 6 = 5x - (4 + 3 * 2)")
+	s := "atan(4+x)=y-3*5"
+	toks := Tokenize(s)
 	for _,v := range toks {
 		fmt.Println(v)
 	}
+
+	eq,err := ParseEquation(s)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(eq.Print())
 }
