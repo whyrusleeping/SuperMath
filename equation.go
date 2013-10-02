@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"os"
 	"bufio"
+	"bytes"
 )
 
 func IsOperator(c uint8) bool {
@@ -49,67 +50,62 @@ type Token struct {
 	val string
 }
 
-func IsSpecialFunction(segment string) (bool, string) {
+func IsFunction(segment string) (bool, string) {
 	if len(segment) > 3 {
 		tr := segment[:3]
 		switch tr {
-			case "sin", "cos", "tan":
-				return true, tr
+		case "sin", "cos", "tan":
+			return true, tr
 		}
 		tr = segment[:4]
 		switch tr {
-			case "asin", "acos", "atan":
-				return true, tr
+		case "asin", "acos", "atan":
+			return true, tr
 		}
 	}
 	return false, ""
 }
 
 func Tokenize(input string) []*Token {
-	tokens := make([]*Token, len(input))
-	ntok := 0
-	tmpStr := ""
+	tokens := make([]*Token, 0, len(input))
+	buf := new(bytes.Buffer)
+
 	for i := 0; i < len(input); i++ {
 		c := input[i]
 		if IsNum(c) || c == '.' {
-			tmpStr += input[i:i+1]
+			buf.WriteByte(input[i])
 		} else {
-			if tmpStr != "" {
-				tokens[ntok] = &Token{TNumber, tmpStr}
-				tmpStr = ""
-				ntok++
+			if buf.Len() > 0 {
+				tokens = append(tokens,&Token{TNumber, buf.String()})
+				buf.Reset()
 			}
 			t := TUnknown
 			if c == '(' {
 				t = TLparen
-			}else if c == ')' {
+			} else if c == ')' {
 				t = TRparen
-			}else if IsOperator(c) {
+			} else if IsOperator(c) {
 				t = TOperator
-			}else if IsAlpha(c) {
-				fi, str := IsSpecialFunction(input[i:])
+			} else if IsAlpha(c) {
+				fi, str := IsFunction(input[i:])
 				if fi {
 					i += len(str)
 					t = TFunction
-					tokens[ntok] = &Token{t, str}
-					tokens[ntok + 1] = &Token{TOperator, "F"}
-					ntok += 2
-					continue
+					tokens = append(tokens,&Token{t, str})
+					tokens = append(tokens,&Token{TOperator, "F"})
+				} else {
+					t = TVariable
 				}
-				t = TVariable
 			}
 			if t != TUnknown {
-				tokens[ntok] = &Token{t,input[i:i+1]}
-				ntok++
+				tokens = append(tokens,&Token{t,input[i:i+1]})
 			}
-
 		}
 	}
-	if tmpStr != "" {
-		tokens[ntok] = &Token{TNumber, tmpStr}
-		ntok++
+	if buf.Len() > 0 {
+		tokens = append(tokens,&Token{TNumber, buf.String()})
 	}
-	return tokens[:ntok]
+	return tokens
 }
 
 //ParseExpression and validate syntax, also expand any 'shortcuts'
@@ -195,20 +191,22 @@ func build(tokens []*Token) Equatable {
 	stack := NewTokStack(len(tokens))
 	postfix := NewTokStack(len(tokens))
 	for _,t := range tokens {
-		if t.kind == TNumber || t.kind == TVariable ||t.kind == TFunction {
+		switch t.kind {
+		case TNumber, TVariable, TFunction:
 			postfix.Push(t)
-		} else if t.kind == TLparen {
+		case TLparen:
 			stack.Push(t)
-		} else if t.kind == TOperator {
+		case TOperator:
 			for stack.Size() > 0 && stack.Peek().kind != TLparen {
-				if comparePrecedence(OpSignToConst(stack.Peek().val),OpSignToConst(t.val)) {
+				if comparePrecedence(OpSignToConst(stack.Peek().val),
+						OpSignToConst(t.val)) {
 					postfix.Push(stack.Pop())
 				} else {
 					break
 				}
 			}
 			stack.Push(t)
-		} else if t.kind == TRparen {
+		case TRparen:
 			for stack.Size() > 0 && stack.Peek().kind != TLparen {
 				postfix.Push(stack.Pop())
 			}
@@ -229,7 +227,7 @@ func build(tokens []*Token) Equatable {
 		} else if t.kind == TNumber {
 			eqs[eqsc] = NewConstant(t.val)
 			eqsc++
-		}else if t.kind == TFunction {
+		} else if t.kind == TFunction {
 			eqs[eqsc] = &Function{FStrToConst(t.val),nil}
 			eqsc++
 		} else if t.kind == TOperator {
@@ -240,10 +238,10 @@ func build(tokens []*Token) Equatable {
 				tfun.arg = tpar
 				eqsc--
 			} else {
-			neq := &Term{eqs[eqsc - 2] ,eqs[eqsc - 1], op}
-			eqsc--
-			eqs[eqsc - 1] = neq
-		}
+				neq := &Term{eqs[eqsc - 2] ,eqs[eqsc - 1], op}
+				eqsc--
+				eqs[eqsc - 1] = neq
+			}
 		}
 	}
 	return eqs[0]
@@ -305,7 +303,12 @@ func Interpreter() {
 		if line[0] == ':' {
 			eq,_ = ParseEquation(string(line[1:]))
 		} else if line[0] == '?' {
-			fmt.Printf("%s = %f\n", string(line[1:2]), Vars[line[1]].Value())
+			v := Vars[line[1]]
+			if v != nil {
+				fmt.Printf("%s = %f\n", string(line[1:2]), v.Value())
+			} else {
+				fmt.Printf("Error: %s does not exist!\n", line[1:2])
+			}
 		} else if line[0] == '!' {
 			fmt.Printf("Solving for %s in:\n\t%s\n", string(line[1:2]), eq.Print())
 			ans, er := eq.SolveFor(line[1])
@@ -316,7 +319,12 @@ func Interpreter() {
 				return
 			}
 			if strings.Contains(string(line),"=") {
-				Vars[line[0]].val,_ = strconv.ParseFloat(string(line[2:]),64)
+				v := Vars[line[0]]
+				if v != nil {
+					v.val,_ = strconv.ParseFloat(string(line[2:]),64)
+				} else {
+					fmt.Printf("Error: %s does not exist!\n", line[0:1])
+				}
 			}
 		}
 	}
